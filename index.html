@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OGUN2026 Check-in</title>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --c-bg: #0b3d1f;
+    --c-surface: #0f4a26;
+    --c-text: #ffffff;
+    --c-muted: #cfe6d8;
+    --c-gold: #d49c1b;
+    --c-ok: #1d9e75;
+    --c-dup: #ba7517;
+    --c-fail: #a32d2d;
+    --c-border: rgba(255,255,255,0.25);
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 32px;
+  }
+  h1 { font-size: 20px; margin: 4px 0 16px; text-align: center; }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--c-surface);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--c-border);
+  }
+  #reader { width: 100%; border-radius: 12px; overflow: hidden; }
+  #result {
+    margin-top: 16px;
+    min-height: 60px;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.5;
+    background: rgba(255,255,255,0.08);
+  }
+  #result .details { display: block; font-weight: 400; font-size: 14px; margin-top: 6px; color: var(--c-muted); }
+  .ok { background: var(--c-ok) !important; color: white; }
+  .dup { background: var(--c-dup) !important; color: white; }
+  .fail { background: var(--c-fail) !important; color: white; }
+  .setup { text-align: center; }
+  .setup input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--c-border);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 14px;
+    margin: 12px 0;
+  }
+  .setup button, .link-btn {
+    background: var(--c-gold);
+    color: #0b3d1f;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .settings-toggle {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--c-muted);
+    text-decoration: underline;
+    cursor: pointer;
+    text-align: center;
+  }
+  p.hint { font-size: 13px; color: var(--c-muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+  <h1>OGUN2026 Check-in</h1>
+
+  <div class="card">
+    <div id="setupScreen" class="setup" style="display:none;">
+      <p class="hint">Paste the Apps Script Web App URL (the one ending in <code>/exec</code>) to connect this scanner to your registration sheet.</p>
+      <input id="execUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      <br>
+      <button onclick="saveUrl()">Save & Start Scanning</button>
+    </div>
+
+    <div id="scanScreen" style="display:none;">
+      <div id="reader"></div>
+      <div id="result">Point camera at ticket QR</div>
+      <div class="settings-toggle" onclick="showSetup()">Change Web App URL</div>
+    </div>
+  </div>
+
+  <script>
+    let execUrl = null;
+    let scanner = null;
+
+    function safeGet(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeSet(key, val) {
+      try { localStorage.setItem(key, val); } catch (e) {}
+    }
+
+    function init() {
+      execUrl = safeGet('ogun2026_exec_url');
+      if (execUrl) {
+        showScanner();
+      } else {
+        showSetup();
+      }
+    }
+
+    function showSetup() {
+      if (scanner) { try { scanner.clear(); } catch (e) {} scanner = null; }
+      document.getElementById('scanScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'block';
+      document.getElementById('execUrlInput').value = execUrl || '';
+    }
+
+    function saveUrl() {
+      const val = document.getElementById('execUrlInput').value.trim();
+      if (!val.startsWith('https://script.google.com/')) {
+        alert('That doesn\'t look like a script.google.com Web App URL. Double-check it ends in /exec.');
+        return;
+      }
+      execUrl = val;
+      safeSet('ogun2026_exec_url', val);
+      showScanner();
+    }
+
+    function showScanner() {
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('scanScreen').style.display = 'block';
+      startScanner();
+    }
+
+    function startScanner() {
+      scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 }, false);
+      scanner.render(onScanSuccess);
+    }
+
+    function onScanSuccess(decodedText) {
+      if (scanner) scanner.pause();
+      const box = document.getElementById('result');
+      box.className = '';
+      box.textContent = 'Checking...';
+
+      const url = execUrl + '?action=checkin&ticketId=' + encodeURIComponent(decodedText);
+
+      fetch(url)
+        .then(res => res.json())
+        .then(showResult)
+        .catch(() => {
+          box.className = 'fail';
+          box.textContent = '✘ Could not reach the server — check connection';
+          setTimeout(resumeScanner, 2500);
+        });
+    }
+
+    function showResult(res) {
+      const box = document.getElementById('result');
+      if (res.success || res.alreadyCheckedIn) {
+        const d = res.details;
+        box.className = res.success ? 'ok' : 'dup';
+        const headline = res.success ? '✔ Checked in' : '⚠ Already checked in today';
+        box.innerHTML = headline +
+          '<span class="details">' + d.name + '<br>' +
+          d.gender + ' · ' + d.category + ' · ' + d.state + ' · ' + d.regType + '<br>' +
+          d.designation + ', ' + d.org + '</span>';
+      } else if (res.notFound) {
+        box.className = 'fail';
+        box.textContent = '✘ Ticket not found';
+      } else {
+        box.className = 'fail';
+        box.textContent = '✘ ' + (res.message || 'Error');
+      }
+      setTimeout(resumeScanner, 3000);
+    }
+
+    function resumeScanner() {
+      if (scanner) {
+        try { scanner.resume(); } catch (e) {}
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
