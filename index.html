@@ -7,14 +7,8 @@
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root {
-    --c-bg: #0b3d1f;
-    --c-surface: #0f4a26;
-    --c-text: #ffffff;
-    --c-muted: #cfe6d8;
-    --c-gold: #d49c1b;
-    --c-ok: #1d9e75;
-    --c-dup: #ba7517;
-    --c-fail: #a32d2d;
+    --c-bg: #0b3d1f; --c-surface: #0f4a26; --c-text: #ffffff; --c-muted: #cfe6d8;
+    --c-gold: #d49c1b; --c-ok: #1d9e75; --c-dup: #ba7517; --c-fail: #a32d2d;
     --c-border: rgba(255,255,255,0.25);
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
@@ -22,113 +16,109 @@
   }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
   body {
-    height: 100%;
-    margin: 0;
+    height: 100%; margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--c-bg);
-    color: var(--c-text);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background: var(--c-bg); color: var(--c-text);
+    display: flex; flex-direction: column; align-items: center;
     padding: 20px 16px 32px;
   }
   h1 { font-size: 20px; margin: 4px 0 16px; text-align: center; }
-  .card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--c-surface);
-    border-radius: 16px;
-    padding: 20px;
-    border: 1px solid var(--c-border);
-  }
+  .card { width: 100%; max-width: 420px; background: var(--c-surface); border-radius: 16px; padding: 20px; border: 1px solid var(--c-border); }
   #reader { width: 100%; border-radius: 12px; overflow: hidden; }
-  #result {
-    margin-top: 16px;
-    min-height: 60px;
-    padding: 14px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 17px;
-    line-height: 1.5;
-    background: rgba(255,255,255,0.08);
-  }
+  #result { margin-top: 16px; min-height: 60px; padding: 14px; border-radius: 10px; font-weight: 600; font-size: 17px; line-height: 1.5; background: rgba(255,255,255,0.08); }
   #result .details { display: block; font-weight: 400; font-size: 14px; margin-top: 6px; color: var(--c-muted); }
   .ok { background: var(--c-ok) !important; color: white; }
   .dup { background: var(--c-dup) !important; color: white; }
   .fail { background: var(--c-fail) !important; color: white; }
   .setup { text-align: center; }
-  .setup input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--c-border);
-    background: rgba(255,255,255,0.08);
-    color: white;
-    font-size: 14px;
-    margin: 12px 0;
+  input, select {
+    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-border);
+    background: rgba(255,255,255,0.08); color: white; font-size: 14px; margin: 6px 0 12px;
   }
-  .setup button, .link-btn {
-    background: var(--c-gold);
-    color: #0b3d1f;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
+  label { font-size: 12px; color: var(--c-muted); display: block; margin-top: 8px; }
+  button, .link-btn {
+    background: var(--c-gold); color: #0b3d1f; border: none; padding: 12px 20px;
+    border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; width: 100%;
   }
-  .settings-toggle {
-    margin-top: 14px;
-    font-size: 12px;
-    color: var(--c-muted);
-    text-decoration: underline;
-    cursor: pointer;
-    text-align: center;
-  }
+  .settings-toggle { margin-top: 14px; font-size: 12px; color: var(--c-muted); text-decoration: underline; cursor: pointer; text-align: center; }
   p.hint { font-size: 13px; color: var(--c-muted); line-height: 1.5; }
+  .tabs { display: flex; gap: 8px; width: 100%; max-width: 420px; margin-bottom: 14px; }
+  .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.08); cursor: pointer; font-weight: 600; font-size: 14px; }
+  .tab.active { background: var(--c-gold); color: #0b3d1f; }
 </style>
 </head>
 <body>
-  <h1>OGUN2026 Check-in</h1>
+  <h1>OGUN2026</h1>
+
+  <div class="tabs" id="tabs" style="display:none;">
+    <div class="tab active" id="tabScan" onclick="switchTab('scan')">Scan</div>
+    <div class="tab" id="tabRegister" onclick="switchTab('register')">Register Walk-in</div>
+  </div>
 
   <div class="card">
     <div id="setupScreen" class="setup" style="display:none;">
-      <p class="hint">Paste the Apps Script Web App URL (the one ending in <code>/exec</code>) to connect this scanner to your registration sheet.</p>
+      <p class="hint">Paste the Apps Script Web App URL (ending in <code>/exec</code>) to connect this page to your registration sheet.</p>
       <input id="execUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
-      <br>
-      <button onclick="saveUrl()">Save & Start Scanning</button>
+      <button onclick="saveUrl()">Save & Continue</button>
     </div>
 
     <div id="scanScreen" style="display:none;">
       <div id="reader"></div>
       <div id="result">Point camera at ticket QR</div>
-      <div class="settings-toggle" onclick="showSetup()">Change Web App URL</div>
     </div>
+
+    <div id="registerScreen" style="display:none;">
+      <label>Full Name *</label>
+      <input id="regName" type="text" placeholder="e.g. Ada Okonkwo">
+      <label>Email *</label>
+      <input id="regEmail" type="email" placeholder="e.g. ada@example.com">
+      <label>Gender</label>
+      <select id="regGender">
+        <option value="">Select</option>
+        <option value="M">Male</option>
+        <option value="F">Female</option>
+      </select>
+      <label>Category (e.g. NALHSATON Member, Invited Guest)</label>
+      <input id="regCategory" type="text" placeholder="e.g. NALHSATON Member">
+      <label>State Chapter</label>
+      <input id="regState" type="text" placeholder="e.g. Ogun">
+      <label>Organization</label>
+      <input id="regOrg" type="text" placeholder="e.g. Federal University of Agriculture">
+      <label>Designation</label>
+      <input id="regDesignation" type="text" placeholder="e.g. Lecturer">
+      <label>Registration Type</label>
+      <select id="regType">
+        <option value="Late Registration" selected>Late Registration</option>
+        <option value="Regular Registration (Early)">Regular Registration</option>
+        <option value="Sponsored Delegate">Sponsored Delegate</option>
+        <option value="Complimentary">Complimentary</option>
+      </select>
+      <button onclick="submitRegistration()">Register & Send Ticket</button>
+      <div id="regResult" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="settings-toggle" id="changeUrlBtn" onclick="showSetup()" style="display:none;">Change Web App URL</div>
   </div>
 
   <script>
     let execUrl = null;
     let scanner = null;
+    let currentTab = 'scan';
 
-    function safeGet(key) {
-      try { return localStorage.getItem(key); } catch (e) { return null; }
-    }
-    function safeSet(key, val) {
-      try { localStorage.setItem(key, val); } catch (e) {}
-    }
+    function safeGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function safeSet(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
 
     function init() {
       execUrl = safeGet('ogun2026_exec_url');
-      if (execUrl) {
-        showScanner();
-      } else {
-        showSetup();
-      }
+      if (execUrl) { showMain(); } else { showSetup(); }
     }
 
     function showSetup() {
       if (scanner) { try { scanner.clear(); } catch (e) {} scanner = null; }
+      document.getElementById('tabs').style.display = 'none';
       document.getElementById('scanScreen').style.display = 'none';
+      document.getElementById('registerScreen').style.display = 'none';
+      document.getElementById('changeUrlBtn').style.display = 'none';
       document.getElementById('setupScreen').style.display = 'block';
       document.getElementById('execUrlInput').value = execUrl || '';
     }
@@ -141,13 +131,32 @@
       }
       execUrl = val;
       safeSet('ogun2026_exec_url', val);
-      showScanner();
+      showMain();
     }
 
-    function showScanner() {
+    function showMain() {
       document.getElementById('setupScreen').style.display = 'none';
-      document.getElementById('scanScreen').style.display = 'block';
-      startScanner();
+      document.getElementById('tabs').style.display = 'flex';
+      document.getElementById('changeUrlBtn').style.display = 'block';
+      switchTab('scan');
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabScan').classList.toggle('active', tab === 'scan');
+      document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+      document.getElementById('scanScreen').style.display = tab === 'scan' ? 'block' : 'none';
+      document.getElementById('registerScreen').style.display = tab === 'register' ? 'block' : 'none';
+
+      if (tab === 'scan' && !scanner) {
+        startScanner();
+      }
+      if (tab === 'register' && scanner) {
+        try { scanner.pause(); } catch (e) {}
+      }
+      if (tab === 'scan' && scanner) {
+        try { scanner.resume(); } catch (e) {}
+      }
     }
 
     function startScanner() {
@@ -160,17 +169,12 @@
       const box = document.getElementById('result');
       box.className = '';
       box.textContent = 'Checking...';
-
       const url = execUrl + '?action=checkin&ticketId=' + encodeURIComponent(decodedText);
-
-      fetch(url)
-        .then(res => res.json())
-        .then(showResult)
-        .catch(() => {
-          box.className = 'fail';
-          box.textContent = '✘ Could not reach the server — check connection';
-          setTimeout(resumeScanner, 2500);
-        });
+      fetch(url).then(res => res.json()).then(showResult).catch(() => {
+        box.className = 'fail';
+        box.textContent = '✘ Could not reach the server — check connection';
+        setTimeout(resumeScanner, 2500);
+      });
     }
 
     function showResult(res) {
@@ -179,24 +183,58 @@
         const d = res.details;
         box.className = res.success ? 'ok' : 'dup';
         const headline = res.success ? '✔ Checked in' : '⚠ Already checked in today';
-        box.innerHTML = headline +
-          '<span class="details">' + d.name + '<br>' +
+        box.innerHTML = headline + '<span class="details">' + d.name + '<br>' +
           d.gender + ' · ' + d.category + ' · ' + d.state + ' · ' + d.regType + '<br>' +
           d.designation + ', ' + d.org + '</span>';
       } else if (res.notFound) {
-        box.className = 'fail';
-        box.textContent = '✘ Ticket not found';
+        box.className = 'fail'; box.textContent = '✘ Ticket not found';
       } else {
-        box.className = 'fail';
-        box.textContent = '✘ ' + (res.message || 'Error');
+        box.className = 'fail'; box.textContent = '✘ ' + (res.message || 'Error');
       }
       setTimeout(resumeScanner, 3000);
     }
 
     function resumeScanner() {
-      if (scanner) {
-        try { scanner.resume(); } catch (e) {}
+      if (scanner && currentTab === 'scan') { try { scanner.resume(); } catch (e) {} }
+    }
+
+    function submitRegistration() {
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const resultBox = document.getElementById('regResult');
+
+      if (!name || !email) {
+        resultBox.innerHTML = '<div class="fail" style="padding:12px;border-radius:8px;">Name and email are required</div>';
+        return;
       }
+
+      resultBox.innerHTML = '<div style="padding:12px;">Registering...</div>';
+
+      const params = new URLSearchParams({
+        action: 'register',
+        name: name,
+        email: email,
+        gender: document.getElementById('regGender').value,
+        category: document.getElementById('regCategory').value,
+        state: document.getElementById('regState').value,
+        org: document.getElementById('regOrg').value,
+        designation: document.getElementById('regDesignation').value,
+        regType: document.getElementById('regType').value
+      });
+
+      fetch(execUrl + '?' + params.toString())
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            resultBox.innerHTML = '<div class="ok" style="padding:14px;border-radius:8px;">✔ Registered — ticket sent to ' + email + '<br><span style="font-weight:400;font-size:13px;">' + res.ticketId + '</span></div>';
+            ['regName','regEmail','regCategory','regState','regOrg','regDesignation'].forEach(id => document.getElementById(id).value = '');
+          } else {
+            resultBox.innerHTML = '<div class="fail" style="padding:14px;border-radius:8px;">✘ ' + (res.message || 'Registration failed') + '</div>';
+          }
+        })
+        .catch(() => {
+          resultBox.innerHTML = '<div class="fail" style="padding:14px;border-radius:8px;">✘ Could not reach the server — check connection</div>';
+        });
     }
 
     init();
